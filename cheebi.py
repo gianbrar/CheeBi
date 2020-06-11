@@ -2,8 +2,11 @@ import discord
 import sys
 import hashlib
 import time
+import asyncio
 from discord.ext import commands
 from discord.ext.commands import Bot
+
+cleanupVar = True
 
 pingerslingerMaxPings = 50
 
@@ -16,7 +19,17 @@ authUserHashes = [
   "9f5ff27bae96e312e021d2e84b3ea04b47c59cd3e610b2d0be06fd141b61eb25b5e1c1c9343b4fe93a63fde20117de4f534218ac05f24bc0d7f7d0c30020f484"
 ]
 
-slingerCooldown = []
+slingerCooldownUsers = []
+class user:
+  def __init__(self, ID, cooldownTime):
+    self.ID = ID
+    self.cooldownTime = cooldownTime
+  def cooldownTrim(self, currentTime):
+    if (currentTime - self.cooldownTime >= 30):
+      return True
+    else:
+      return False
+
 
 client = Bot(command_prefix=".")
 client.remove_command("help")
@@ -31,6 +44,7 @@ else:
 async def on_ready():
   print("CheeBi activated at " + time.asctime(time.localtime(time.time())))
   await client.change_presence(status=discord.Status.online, activity=discord.Game(name='To learn, type ".help"'))
+  await trimCooldowns()
 
 #Help command:
 @client.command()
@@ -64,7 +78,15 @@ async def shutdown(ctx):
 
 
 async def pingerSlinger(ctxIn, messageIn):
+  userCooldownComplete = cooldownDone(messageIn.author.id)
+
+  
+  if not userCooldownComplete[0]:
+    await ctxIn.send(messageIn.author.mention + ", you cannot use the pingerslinger command for another: " + str(timeLeft(userCooldownComplete[1])) + " seconds.")
+    return
   try:
+    slingerCooldownUsers.append(user(messageIn.author.id, int(time.time())))
+    slingerindex = len(slingerCooldownUsers)
     uncleanArray = messageIn.content.split(" ")
     while("" in uncleanArray):
       uncleanArray.remove("")
@@ -92,6 +114,7 @@ async def pingerSlinger(ctxIn, messageIn):
       conditionalRemoveS = 6;
 
     await messageIn.channel.send(uncleanArray[2] + " pings"[0:conditionalRemoveS] + " sent graciously from " + messageIn.author.mention + ".")
+    slingerCooldownUsers.append(user(messageIn.author.id, int(time.time())))
   except:
     await allPing(ctxIn, True)
 
@@ -108,7 +131,20 @@ def pingerslingerReplacements(stringIn):
     return(stringOut)
 
 
+async def trimCooldowns():
+  await asyncio.sleep(120)
 
 
+def cooldownDone(userID2Check):
+  global slingerCooldownUsers
+  timeOfMessage = int(time.time())
+  for i in slingerCooldownUsers:
+    if userID2Check == i.ID:
+      if not i.cooldownTrim(timeOfMessage):
+        return [False, i.cooldownTime]
+  return [True, 0]
+
+def timeLeft(timeIn):
+  return(timeIn - int(time.time()) + 30)
 
 client.run(token)
