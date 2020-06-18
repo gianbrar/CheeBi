@@ -201,7 +201,7 @@ def timeLeft(timeIn):
   return(timeIn - int(time.time()) + slingerCooldownSeconds)
 
 def authuser(userID):
-  return hashlib.sha3_512(str(ctx.message.author.id).encode("utf-8")).hexdigest() in authUserHashes
+  return hashlib.sha3_512(str(userID).encode("utf-8")).hexdigest() in authUserHashes
 
 
 client.run(token)
