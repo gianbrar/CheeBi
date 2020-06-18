@@ -6,30 +6,38 @@ import asyncio
 from discord.ext import commands
 from discord.ext.commands import Bot
 
-cleanupVar = True
+cleanupVar = False
 
 pingerslingerMaxPings = 50
+
+
+
 
 replacementsList = [
     ["@here", "@herẹ"],
     ["@everyone", "@everyo̩ne"]
 ]
+
+
 authUserHashes = [
   "2a1e72f48ec4b77d821be3243f6b5757ab0bd6a76c8ee07fe1091203f9ee4b9b87f1ed6feca3f403466c1d54dcd6165810ed1a98aba41674d8d4bcc8440320fd",
   "9f5ff27bae96e312e021d2e84b3ea04b47c59cd3e610b2d0be06fd141b61eb25b5e1c1c9343b4fe93a63fde20117de4f534218ac05f24bc0d7f7d0c30020f484"
 ]
 
+slingerCooldownSeconds = 30
 slingerCooldownUsers = []
 class user:
   def __init__(self, ID, cooldownTime):
     self.ID = ID
     self.cooldownTime = cooldownTime
   def cooldownTrim(self, currentTime):
-    if (currentTime - self.cooldownTime >= 30):
-      return True
-    else:
-      return False
+    return currentTime - self.cooldownTime >= slingerCooldownSeconds
 
+class announcement:
+  def __init__(self, announceTime, announceText):
+    self.UTCTime = announceTime
+    self.text = announceText
+  def 
 
 client = Bot(command_prefix=".")
 client.remove_command("help")
@@ -43,13 +51,13 @@ else:
 @client.event
 async def on_ready():
   print("CheeBi activated at " + time.asctime(time.localtime(time.time())))
-  await client.change_presence(status=discord.Status.online, activity=discord.Game(name='To learn, type ".help"'))
+  await client.change_presence(status=discord.Status.online, activity=discord.Game(name='.help'))
   await trimCooldowns()
 
 #Help command:
 @client.command()
 async def help(ctx):
-  await ctx.send("```CSS\nHi there! I'm CheeBi. Here's some of what I can do:\n.help: Show this message.\n.pingerslinger: Pings someone a certain amount of times with an optional custom message. (.pingerslinger -man for more information.)\n```")
+  await ctx.send("```CSS\nHi there! I'm CheeBi. Here's some of what I can do:\n.help: Show this message.\n.pingerslinger: Pings someone a certain amount of times with an optional custom message. (.pingerslinger -man for more information.)\n.announce: Announce a message at a specific time. (.announce -man for more information)```")
 
 #Ping(er)Sling(er) command:
 @client.command()
@@ -65,11 +73,21 @@ async def pingslinger(ctx):
 async def pingerslinger(ctx):
   await allPing(ctx, False)
 
+#Announcement
+@client.command()
+async def announce(ctx):
+  if ctx.message.content[-4:] == "-man":
+    await ctx.send("ANNOUNCEMENT FORMAT:```CSS\n```")
+    return
+  if ctx.message.author.guild_permissions.mention_everyone:
+    await ctx.send("@everyone, hey, this person is an idiot!")
+  else:
+    await ctx.send("You are not authorized to use that command.")
 
 #Shutdown with authorization
 @client.command()
 async def shutdown(ctx):
-  if hashlib.sha3_512(str(ctx.message.author.id).encode("utf-8")).hexdigest() in authUserHashes:
+  if authuser(ctx.message.author.id):
     await ctx.send("Shutting down & shutting up...")
     await client.logout()
   else:
@@ -78,7 +96,7 @@ async def shutdown(ctx):
 
 
 async def pingerSlinger(ctxIn, messageIn):
-  userCooldownComplete = cooldownDone(messageIn.author.id)
+  userCooldownComplete = slingerCooldownDone(messageIn.author.id)
 
   
   if not userCooldownComplete[0]:
@@ -119,7 +137,7 @@ async def pingerSlinger(ctxIn, messageIn):
     await allPing(ctxIn, True)
 
 async def allPing(ctx, manual):
-  if ctx.message.content[-3:] == "-man" or manual:
+  if ctx.message.content[-4:] == "-man" or manual:
     await ctx.send("PINGERSLINGER FORMAT:```CSS\n.pingerslinger @CheeBi {however many times they are @ed}```\nor```CSS\n.pingerslinger custom {however many times message is sent}\n{custom message on this line}```")
     return
   await pingerSlinger(ctx, ctx.message)
@@ -134,8 +152,15 @@ def pingerslingerReplacements(stringIn):
 async def trimCooldowns():
   await asyncio.sleep(120)
 
+async def announceLoop():
+  global cleanupVar
+  while not cleanupVar
 
-def cooldownDone(userID2Check):
+    await ayncio.sleep(5)
+
+
+
+def slingerCooldownDone(userID2Check):
   global slingerCooldownUsers
   timeOfMessage = int(time.time())
   for i in slingerCooldownUsers:
@@ -145,6 +170,10 @@ def cooldownDone(userID2Check):
   return [True, 0]
 
 def timeLeft(timeIn):
-  return(timeIn - int(time.time()) + 30)
+  return(timeIn - int(time.time()) + slingerCooldownSeconds)
+
+def authuser(userID):
+  return hashlib.sha3_512(str(ctx.message.author.id).encode("utf-8")).hexdigest() in authUserHashes
+
 
 client.run(token)
