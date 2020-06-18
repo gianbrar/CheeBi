@@ -1,4 +1,5 @@
 import discord
+import json
 import sys
 import hashlib
 import time
@@ -12,11 +13,14 @@ pingerslingerMaxPings = 50
 
 
 
-
 replacementsList = [
     ["@here", "@herẹ"],
     ["@everyone", "@everyo̩ne"]
 ]
+
+announcementList = {
+}
+
 
 
 authUserHashes = [
@@ -26,7 +30,11 @@ authUserHashes = [
 
 slingerCooldownSeconds = 30
 slingerCooldownUsers = []
-class user:
+
+
+#Define classes
+
+class slingerUser:
   def __init__(self, ID, cooldownTime):
     self.ID = ID
     self.cooldownTime = cooldownTime
@@ -37,16 +45,30 @@ class announcement:
   def __init__(self, announceTime, announceText):
     self.UTCTime = announceTime
     self.text = announceText
-  def 
+   
 
+
+#Discord.py setup & get token
 client = Bot(command_prefix=".")
 client.remove_command("help")
 
 if len(sys.argv) > 1:
-  token = sys.argv[1]
+  if not sys.argv[1].startswith("-"):
+    token = sys.argv[1]
+  else:
+    token = open("token.txt", 'r').read().split("\n")
+    if sys.argv[len(sys.argv) - 1] == "-dev":
+      token = token[0]
+    elif sys.argv[len(sys.argv) - 1] == "-pub":
+      token = token[1]
 else:
-  token = open("token.txt", 'r')
-  token = token.read()
+  if token.find("\n") == -1:
+    token = open("token.txt", 'r').read()
+  else:
+    token = open("token.txt", 'r').read()
+    token = token[:token.find("\n")]
+
+
 
 @client.event
 async def on_ready():
@@ -57,7 +79,7 @@ async def on_ready():
 #Help command:
 @client.command()
 async def help(ctx):
-  await ctx.send("```CSS\nHi there! I'm CheeBi. Here's some of what I can do:\n.help: Show this message.\n.pingerslinger: Pings someone a certain amount of times with an optional custom message. (.pingerslinger -man for more information.)\n.announce: Announce a message at a specific time. (.announce -man for more information)```")
+  await ctx.send("```CSS\nHi there! I'm CheeBi. Here's some of what I can do:\n.help: Show this message.\n.pingerslinger: Pings someone a certain amount of times with an optional custom message. (.pingerslinger -man for more information.)\n.announce: Schedules an announcement. (.announce -man for more information)```")
 
 #Ping(er)Sling(er) command:
 @client.command()
@@ -77,7 +99,7 @@ async def pingerslinger(ctx):
 @client.command()
 async def announce(ctx):
   if ctx.message.content[-4:] == "-man":
-    await ctx.send("ANNOUNCEMENT FORMAT:```CSS\n```")
+    await ctx.send("ANNOUNCEMENT FORMAT:```CSS\nTo announce in certain amount of time, use the format:\n\n.announce in (_w)(_d)(_h)(_m)(_s) to {your group goes here} message:\n{YOUR ANNOUNCEMENT GOES HERE}\n\n\nTo announce at a specific time, (based by default on the server's timezone), use the format:\n\n.announce at (month)(date)(hour)(time)```")
     return
   if ctx.message.author.guild_permissions.mention_everyone:
     await ctx.send("@everyone, hey, this person is an idiot!")
@@ -103,7 +125,7 @@ async def pingerSlinger(ctxIn, messageIn):
     await ctxIn.send(messageIn.author.mention + ", you cannot use the pingerslinger command for another: " + str(timeLeft(userCooldownComplete[1])) + " seconds.")
     return
   try:
-    slingerCooldownUsers.append(user(messageIn.author.id, int(time.time())))
+    slingerCooldownUsers.append(slingerUser(messageIn.author.id, int(time.time())))
     slingerindex = len(slingerCooldownUsers)
     uncleanArray = messageIn.content.split(" ")
     while("" in uncleanArray):
@@ -132,13 +154,13 @@ async def pingerSlinger(ctxIn, messageIn):
       conditionalRemoveS = 6;
 
     await messageIn.channel.send(uncleanArray[2] + " pings"[0:conditionalRemoveS] + " sent graciously from " + messageIn.author.mention + ".")
-    slingerCooldownUsers.append(user(messageIn.author.id, int(time.time())))
+    slingerCooldownUsers.append(slingerUser(messageIn.author.id, int(time.time())))
   except:
     await allPing(ctxIn, True)
 
 async def allPing(ctx, manual):
   if ctx.message.content[-4:] == "-man" or manual:
-    await ctx.send("PINGERSLINGER FORMAT:```CSS\n.pingerslinger @CheeBi {however many times they are @ed}```\nor```CSS\n.pingerslinger custom {however many times message is sent}\n{custom message on this line}```")
+    await ctx.send("PINGERSLINGER FORMAT:```CSS\nFormat to @ someone a certain number of times:\n.pingerslinger @CheeBi {however many times they are @ed}```\nor```CSS\nFormat to send a custom message a certain number of times:\n.pingerslinger custom {however many times message is sent}\n{custom message on this line}```")
     return
   await pingerSlinger(ctx, ctx.message)
 
@@ -154,11 +176,17 @@ async def trimCooldowns():
 
 async def announceLoop():
   global cleanupVar
-  while not cleanupVar
-
+  while not cleanupVar:
     await ayncio.sleep(5)
 
-
+async def returnAnnounceObject(announcementString):
+  keywordArray = announcementString.content.split(" ")
+  while "" in keywordArray:
+    keywordArray.remove("")
+  if keywordArray[1] == "in":
+    print("announce in")
+  elif keywordArray[1] == "at":
+    print("announce at")
 
 def slingerCooldownDone(userID2Check):
   global slingerCooldownUsers
