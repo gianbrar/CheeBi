@@ -1,27 +1,27 @@
 import discord
 import json
 import sys
+import os
 import hashlib
 import time
 import asyncio
 from discord.ext import commands
 from discord.ext.commands import Bot
 
+
+
+
+
+"""
+These are the declarations of all the variables, lists, objects, classes, etc. used in Cheebi.
+"""
+
+
+
+"""These are variables, lists, etc. used by multiple commands and functions."""
+
+#This variable is used to signal to other threads when the program is closing.
 cleanupVar = False
-
-pingerslingerMaxPings = 50
-
-
-
-replacementsList = [
-    ["@here", "@herẹ"],
-    ["@everyone", "@everyo̩ne"]
-]
-
-announcementList = [
-]
-
-
 
 #These are the SHA-3 512 hashes of the User IDs of the users authorised to administer the bot.
 authUserHashes = [
@@ -29,12 +29,38 @@ authUserHashes = [
   "9f5ff27bae96e312e021d2e84b3ea04b47c59cd3e610b2d0be06fd141b61eb25b5e1c1c9343b4fe93a63fde20117de4f534218ac05f24bc0d7f7d0c30020f484"
 ]
 
+
+
+"""These are variables used by the announce command (and it's functions)"""
+
+#This list is used to store what announcements will need to be sent in the future.
+announcementList = [
+]
+
+
+
+"""These are variables used by the ping(er)Sling(er) command (and it's functions)"""
+
+#This variable sets how long it is before a user can send another ping(er)Sling(er) command after one is sent.
 slingerCooldownSeconds = 30
+
+#This list stores what users have a cooldown period and the time at which their last pingerslinger command was sent.
 slingerCooldownUsers = []
 
+#This is the makimum number of pings allowed in a ping(er)Sling(er) single command.
+pingerslingerMaxPings = 50
 
-#Define classes
-#Class for pingerSlinger users cooldowns.
+#This is the list of replacements that the pingerSlinger will perform on it's custom strings.
+replacementsList = [
+    ["@here", "@herẹ"],
+    ["@everyone", "@everyo̩ne"]
+]
+
+
+
+"""These are the definitions of all the classes used in Cheebi."""
+
+#Class for the pingerSlinger's user cooldowns.
 class slingerUser:
   def __init__(self, ID, cooldownTimestamp):
     self.ID = ID
@@ -42,7 +68,7 @@ class slingerUser:
   def cooldownTrim(self, currentTime):
     return currentTime - self.cooldownTimestamp >= slingerCooldownSeconds
 
-#Class for pingerSlinger users cooldowns.
+#Class for announcement users cooldowns.
 class announcement:
   def __init__(self, announceTime, announceText, userID):
     self.UTCTime = announceTime
@@ -56,13 +82,14 @@ prefix = "."
 if len(sys.argv) > 1:
   if not sys.argv[1].startswith("-"):
     token = sys.argv[1]
-    if hashlib.sha3_512(token.encode("utf-8")).hexdigest() == "147d4ba55862e5705e4a9d091e0e56c332210c2d2ebf7ed6066f3c748d996d46b42e6c9b9edcdf925a7b00a7490d6f19b44e614ede473263684afc6b218e3bc6":
-      prefix = "~"
+    print(hashlib.sha3_512(token.encode("utf-8")).hexdigest())
+    if hashlib.sha3_512(token.encode("utf-8")).hexdigest() == "45659ae3ce89a83d08393f57129c05c03083c2ec9ac31c80a9b09b50acb8ef6b0898edf7f3586b58c7e7d5311d0a9cba09e3ccaa51196aaad3681a4bc7902f39":
+      prefix = "~~"
   else:
     token = open("token.txt", 'r').read().split("\n")
     if sys.argv[len(sys.argv) - 1] == "-dev":
       token = token[0]
-      prefix = "~"
+      prefix = "~~"
     elif sys.argv[len(sys.argv) - 1] == "-pub":
       token = token[1]
 else:
@@ -121,25 +148,23 @@ async def pingslinger(ctx):
 async def pingerslinger(ctx):
   await allPing(ctx, False)
 
-
-
 #Announcement command:
 @client.command()
 async def announce(ctx):
   global prefix
   #Manual page:
   if ctx.message.content[len(prefix)+9:].strip().lower() == "-man":
-    await ctx.send("ANNOUNCEMENT FORMAT:```CSS\nTo announce in certain amount of time, use the format:\n\n" + prefix + "announce in (_w)(_d)(_h)(_m)(_s) to {target group/user without the @ symbol} (inchannel #_____) (-discreet) message:\n{your announcement message goes here}\n\n\nTo announce at a specific time, (based by default on the server's timezone), use the format:\n\n" + prefix + "announce at (month) (day number) (hour) (minute) (tz {three letter time zone code}) to {target group/user without the @ symbol} (inchannel #_____) (-discreet) message:\n{your announcement message goes here}\n\n\nAnything in parenthesis () is optional, and anything in braces {} is a description of what goes there.```")
+    await ctx.send("ANNOUNCEMENT FORMAT:```CSS\nTo announce in certain amount of time, use the format:\n\n" + prefix + "announce in (_w)(_d)(_h)(_m)(_s)* to {target group/user with/without the @ symbol} (inchannel #_____) (-discreet) message:\n{your announcement message goes here}\n\n\nTo announce at a specific time, (based by default on the server's timezone), use the format:\n\n" + prefix + "announce at (month)* (day number)* (hour)* (minute)* (tz {three letter time zone code}) to {target group/user with/without the @ symbol} (inchannel #_____) (-discreet) message:\n{your announcement message goes here}\n\n\nAnything in parenthesis () is optional, and anything in braces {} is a description of what goes there.\n*Although all of these are marked as optional, at least one is required```")
     return
-
+  elif ctx.message.content[len(prefix)+9:].strip().lower() == "-discreet":
+    
   #Setchannel commands:
-  elif ctx.message.content[9:21].strip().lower() == "setchannel":
+  elif ctx.message.content[len(prefix)+8:len(prefix)+20].strip().lower() == "setchannel":
     nextCommandPart = ctx.message.content.find("setchannel")+10
     if  (ctx.message.content[nextCommandPart:].strip() == "-man"):
       await ctx.send("There probably should be a manual here.")
-
     elif(ctx.message.content[nextCommandPart:].strip() == "remove"):
-      await ctx.send("Channel macro removed.")
+      await ctx.send("(Non-existent) Channel macro removed.")
 
     else:
       await ctx.send("Channel macro (not actually) set to \"" + ctx.message.content[21:].strip().split("\n")[0] + "\".")
@@ -148,7 +173,7 @@ async def announce(ctx):
   elif ctx.message.author.guild_permissions.mention_everyone:
     announcementList.append(await returnAnnounceObject(ctx.message.content, ctx.message))
   
-  #Insufficient authorization handler:
+  #Insufficient authorization, handler:
   else:
     await ctx.send("You are not authorized to use that command.")
 
@@ -160,12 +185,21 @@ async def shutdown(ctx):
   if authuser(ctx.message.author.id):
     await ctx.send("Shutting down & shutting up...")
     await client.logout()
+    print("CheeBi stopped at " + time.asctime(time.localtime(time.time())))
   else:
     await ctx.send("You are not authorized to use that command.")
 
 
-
-
+#Restart command with authorization:
+@client.command()
+async def restart(ctx):
+  if authuser(ctx.message.author.id):
+    await ctx.send("Restarting & reworking...")
+    await client.logout()
+    print("CheeBi restarted at " + time.asctime(time.localtime(time.time())))
+    os.execv(sys.executable, ['python3'] + sys.argv)
+  else:
+    await ctx.send("You are not authorized to use that command.")
 
 """
 This is the beginning of the helper functions for the bot commands. These have a range of functionality from doing all of the work for the command to doing a miniscule task for a specific part of a command.
@@ -241,10 +275,12 @@ def slingerCooldownDone(userID2Check):
   global slingerCooldownUsers
   timeOfMessage = int(time.time())
   slingerUserObj = next((i for i in slingerCooldownUsers if i.ID == userID2Check), None)
-  if not slingerUserObj.cooldownTrim(timeOfMessage):
-    return [False, slingerUserObj.cooldownTimestamp]
-  return [True, 0]
-
+  try:
+    if not slingerUserObj.cooldownTrim(timeOfMessage):
+      return [False, slingerUserObj.cooldownTimestamp]
+    return [True, 0]
+  except:
+    return [True, 0]
 
 
 #This is a WIP command to lower the length of the cooldown arrays. (Reducing the size of the JSON file.) It runs about every 2 minutes.
@@ -288,22 +324,22 @@ async def returnAnnounceObject(announcementString, messageObj):
     if token == "inchannel" or token == "message:":
       noError = True
       break
-  
-  print("keywordArray[" + str(afterNameIndex) + "] == " + keywordArray[afterNameIndex])
 
 
   subjectName = announcementString[announcementSubjectIndex:tokenIndex].strip()
-
-  subjectToAnnounceTo = getRoleByName(subjectName, messageObj.guild)
-  if subjectToAnnounceTo == None:
-    subjectToAnnounceTo = getUserByName(subjectName, messageObj.guild)
-    if subjectToAnnounceTo[0] == None:
-      await messageObj.channel.send("There is no role or user named \"" + subjectName + "\".")
-      return None
-    elif subjectToAnnounceTo[1] == True:
-      await messageObj.channel.send("\nThere are multiple users in this server under the name of \"" + subjectName + "\". Please include the Discord Tag. (EG: username#1234)")
-      return None
-    subjectToAnnounceTo = subjectToAnnounceTo[0]
+  if subjectName.startswith("<@!"):
+    subjectToAnnounceMention = subjectName
+  else:
+    subjectToAnnounceTo = getRoleByName(subjectName, messageObj.guild)
+    if subjectToAnnounceTo == None:
+      subjectToAnnounceTo = getUserByName(subjectName, messageObj.guild)
+      if subjectToAnnounceTo[0] == None:
+        await messageObj.channel.send("There is no role or user named \"" + subjectName + "\".")
+        return None
+      elif subjectToAnnounceTo[1] == True:
+        await messageObj.channel.send("\nThere are multiple users in this server under the name of \"" + subjectName + "\". Please include the Discord Tag. (EG: username#1234)")
+        return None
+    subjectToAnnounceMention = subjectToAnnounceTo[0].mention
   
   timeUntilDict = {"w":604800, "d":86400, "h":3600, "m":60, "s":1}
   timeUntil = 0
@@ -321,7 +357,7 @@ async def returnAnnounceObject(announcementString, messageObj):
     await messageObj.channel.send(str(timeUntil) + " seconds until the announcement.")
   elif keywordArray[1] == "at":
     print("announce at")
-  await messageObj.channel.send("Subject is: " + subjectToAnnounceTo.mention)
+  await messageObj.channel.send("Subject is: " + subjectToAnnounceMention)
 
 
 
